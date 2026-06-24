@@ -39,7 +39,7 @@ async def list_events(
 
     if max_employees is not None:
         stmt = stmt.join(Event.company).where(
-            (Company.employees == None) | (Company.employees <= max_employees)  # noqa: E711
+            (Company.employees.is_(None)) | (Company.employees <= max_employees)
         )
 
     if max_revenue is not None:
@@ -47,7 +47,7 @@ async def list_events(
         if max_employees is None:
             stmt = stmt.join(Event.company, isouter=True)
         stmt = stmt.where(
-            (Company.revenue_eur == None) | (Company.revenue_eur < max_revenue)  # noqa: E711
+            (Company.revenue_eur.is_(None)) | (Company.revenue_eur < max_revenue)
         )
 
     if source:

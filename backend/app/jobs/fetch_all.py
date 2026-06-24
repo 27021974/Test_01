@@ -97,11 +97,13 @@ async def _persist_result(session, source: Source, result: FetchResult) -> int:
         )
         session.add(event)
         try:
-            await session.flush()
+            # Use a nested savepoint so a duplicate-hash violation only rolls
+            # back this single event, not the entire batch.
+            async with session.begin_nested():
+                await session.flush()
             new_count += 1
         except IntegrityError:
-            await session.rollback()
-            # Duplicate – skip silently
+            # Duplicate – skip silently (savepoint already rolled back)
             logger.debug("Duplicate event skipped (hash=%s)", h)
 
     return new_count
