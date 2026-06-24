@@ -1,0 +1,1 @@
+"""Marktbeobachtungs-WebApp – Backend Package"""
