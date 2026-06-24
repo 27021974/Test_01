@@ -39,6 +39,8 @@ async def _ensure_source(session, adapter) -> Source:
         session.add(source)
         await session.flush()
     else:
+        source.base_url = adapter.base_url
+        source.enabled = adapter.enabled
         source.mode = adapter.mode
         source.legal_note = adapter.legal_note
     return source

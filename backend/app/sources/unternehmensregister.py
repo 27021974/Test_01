@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import logging
 import urllib.robotparser
+from urllib.parse import urlsplit
 from datetime import datetime
 from typing import Optional
 
@@ -44,7 +45,6 @@ _INSOLVENCY_RSS = "https://www.insolvenzbekanntmachungen.de/ap/suche.jsf?rss=tru
 
 # Fallback: Bundesanzeiger insolvency RSS (publicly documented)
 _BUNDESANZEIGER_BASE = "https://www.unternehmensregister.de"
-_ROBOTS_URL = f"{_BUNDESANZEIGER_BASE}/robots.txt"
 
 # Keyword filter – only pick up insolvency-related entries
 _INSOLVENCY_TERMS = {"insolvenz", "insolvenzverfahren", "zahlungsunfähig", "konkurs"}
@@ -56,13 +56,15 @@ _USER_AGENT = "MarktbeobachtungMVP/1.0"
 def _robots_allows(url: str) -> bool:
     """Return True if robots.txt permits fetching *url*."""
     try:
+        parts = urlsplit(url)
+        robots_url = f"{parts.scheme}://{parts.netloc}/robots.txt"
         rp = urllib.robotparser.RobotFileParser()
-        rp.set_url(_ROBOTS_URL)
+        rp.set_url(robots_url)
         rp.read()
         return rp.can_fetch(_USER_AGENT, url)
     except Exception:
-        # On network error, be conservative and allow (we do our best effort)
-        return True
+        # On network/parsing errors we disable automated access for compliance.
+        return False
 
 
 class UnternehmensregisterAdapter(BaseAdapter):
@@ -84,6 +86,16 @@ class UnternehmensregisterAdapter(BaseAdapter):
 
         if self.mode == "degraded":
             return self._degraded_result()
+
+        if not _robots_allows(_INSOLVENCY_RSS):
+            return FetchResult(
+                source_name=self.name,
+                status="skipped",
+                error_message=(
+                    "Automatischer Abruf deaktiviert: robots.txt erlaubt keinen "
+                    f"Zugriff auf {_INSOLVENCY_RSS}."
+                ),
+            )
 
         # Try the insolvenzbekanntmachungen.de RSS (public, explicitly allowed)
         try:

@@ -29,7 +29,7 @@ async def list_events(
     stmt = (
         select(Event)
         .options(selectinload(Event.source), selectinload(Event.company))
-        .order_by(Event.fetched_at.desc())
+        .order_by(Event.insolvency_score.desc(), Event.fetched_at.desc())
     )
 
     if insolvency is True:

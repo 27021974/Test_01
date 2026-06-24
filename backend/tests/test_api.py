@@ -7,6 +7,8 @@ from httpx import AsyncClient, ASGITransport
 
 from app.main import app
 from app.database import init_db, engine, Base
+from app.models import Event, Source
+from datetime import datetime, timezone
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -116,3 +118,46 @@ async def test_events_search_filter(client):
         resp = await c.get("/api/events?q=insolvenz")
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
+
+
+@pytest.mark.asyncio
+async def test_events_prioritize_insolvency_score(client):
+    import app.database as db_module
+
+    async with db_module.AsyncSessionLocal() as session:
+        async with session.begin():
+            source = Source(
+                name="Test Source",
+                base_url="https://example.com",
+                enabled=True,
+                mode="active",
+            )
+            session.add(source)
+            await session.flush()
+
+            session.add_all(
+                [
+                    Event(
+                        source_id=source.id,
+                        title="Nicht priorisiert",
+                        insolvency_score=0.1,
+                        fetched_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                        event_type="notice",
+                        hash="a" * 64,
+                    ),
+                    Event(
+                        source_id=source.id,
+                        title="Insolvenz priorisiert",
+                        insolvency_score=0.95,
+                        fetched_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+                        event_type="insolvency",
+                        hash="b" * 64,
+                    ),
+                ]
+            )
+
+    async with client as c:
+        resp = await c.get("/api/events")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload[0]["title"] == "Insolvenz priorisiert"
