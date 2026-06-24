@@ -50,13 +50,16 @@ _ROBOTS_URL = f"{_BUNDESANZEIGER_BASE}/robots.txt"
 _INSOLVENCY_TERMS = {"insolvenz", "insolvenzverfahren", "zahlungsunfähig", "konkurs"}
 
 
+_USER_AGENT = "MarktbeobachtungMVP/1.0"
+
+
 def _robots_allows(url: str) -> bool:
     """Return True if robots.txt permits fetching *url*."""
     try:
         rp = urllib.robotparser.RobotFileParser()
         rp.set_url(_ROBOTS_URL)
         rp.read()
-        return rp.can_fetch("*", url)
+        return rp.can_fetch(_USER_AGENT, url)
     except Exception:
         # On network error, be conservative and allow (we do our best effort)
         return True
@@ -98,7 +101,7 @@ class UnternehmensregisterAdapter(BaseAdapter):
         feed_url = _INSOLVENCY_RSS
 
         async with httpx.AsyncClient(timeout=settings.http_timeout, follow_redirects=True) as client:
-            resp = await client.get(feed_url, headers={"User-Agent": "MarktbeobachtungMVP/1.0"})
+            resp = await client.get(feed_url, headers={"User-Agent": _USER_AGENT})
             resp.raise_for_status()
             feed_content = resp.text
 
