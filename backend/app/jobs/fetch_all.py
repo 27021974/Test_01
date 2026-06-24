@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -88,7 +88,7 @@ async def _persist_result(session, source: Source, result: FetchResult) -> int:
             title=raw.title,
             url=raw.url,
             published_at=raw.published_at,
-            fetched_at=datetime.utcnow(),
+            fetched_at=datetime.now(timezone.utc),
             event_type=raw.event_type,
             insolvency_score=score,
             raw_excerpt=raw.raw_excerpt,

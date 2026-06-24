@@ -1,7 +1,7 @@
 """GET /api/stats – aggregated statistics."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/stats", tags=["stats"])
 
 @router.get("", response_model=StatsOut)
 async def get_stats(db: AsyncSession = Depends(get_db)) -> StatsOut:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     since_24h = now - timedelta(hours=24)
     since_7d = now - timedelta(days=7)
 

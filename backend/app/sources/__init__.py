@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -26,7 +26,7 @@ class FetchResult:
     events: list[RawEvent] = field(default_factory=list)
     status: str = "ok"      # ok | error | skipped
     error_message: Optional[str] = None
-    fetched_at: datetime = field(default_factory=datetime.utcnow)
+    fetched_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class BaseAdapter(ABC):
