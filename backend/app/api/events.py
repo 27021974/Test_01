@@ -37,23 +37,22 @@ async def list_events(
     elif insolvency is False:
         stmt = stmt.where(Event.insolvency_score < 0.5)
 
-    if max_employees is not None:
-        # Outer join: keep events without an associated company (data_incomplete)
-        stmt = stmt.join(Event.company, isouter=True).where(
-            (Event.company_id.is_(None))
-            | (Company.employees.is_(None))
-            | (Company.employees <= max_employees)
-        )
-
-    if max_revenue is not None:
-        # Avoid double-join if already joined above
-        if max_employees is None:
-            stmt = stmt.join(Event.company, isouter=True)
-        stmt = stmt.where(
-            (Event.company_id.is_(None))
-            | (Company.revenue_eur.is_(None))
-            | (Company.revenue_eur < max_revenue)
-        )
+    # Join Company once (outer) if any company-based filter is requested.
+    # Outer join preserves events without an associated company (data_incomplete).
+    if max_employees is not None or max_revenue is not None:
+        stmt = stmt.join(Event.company, isouter=True)
+        if max_employees is not None:
+            stmt = stmt.where(
+                (Event.company_id.is_(None))
+                | (Company.employees.is_(None))
+                | (Company.employees <= max_employees)
+            )
+        if max_revenue is not None:
+            stmt = stmt.where(
+                (Event.company_id.is_(None))
+                | (Company.revenue_eur.is_(None))
+                | (Company.revenue_eur < max_revenue)
+            )
 
     if source:
         stmt = stmt.join(Event.source).where(Source.name.ilike(f"%{source}%"))
