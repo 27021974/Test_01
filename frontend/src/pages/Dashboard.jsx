@@ -10,6 +10,9 @@ const DEFAULT_FILTERS = {
   max_employees: '',
   max_revenue: '',
   source: '',
+  bundesland: '',
+  industry: '',
+  procedure_type: '',
   q: '',
 }
 
@@ -132,6 +135,9 @@ export default function Dashboard() {
                 <th>Titel</th>
                 <th>Quelle</th>
                 <th>Datum</th>
+                <th>Region</th>
+                <th>Branche</th>
+                <th>Verfahren</th>
                 <th>Score</th>
                 <th>Typ</th>
                 <th>Vollständigkeit</th>
@@ -152,6 +158,9 @@ export default function Dashboard() {
                       ? new Date(ev.published_at).toLocaleDateString('de-DE')
                       : <span className="text-muted">—</span>}
                   </td>
+                  <td>{ev.company?.bundesland || ev.company_bundesland || <span className="text-muted">—</span>}</td>
+                  <td>{ev.company?.industry || <span className="text-muted">—</span>}</td>
+                  <td>{ev.procedure_type || <span className="text-muted">—</span>}</td>
                   <td>
                     <ScoreBar score={ev.insolvency_score} />
                   </td>

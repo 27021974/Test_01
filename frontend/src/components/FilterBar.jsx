@@ -2,6 +2,16 @@ import { useState } from 'react'
 
 const KMU_EMPLOYEES = 50
 const KMU_REVENUE = 10000000
+const PROCEDURE_TYPES = [
+  'Vorläufiges Verfahren',
+  'Eröffnetes Verfahren',
+  'Abweisung mangels Masse',
+  'Eigenverwaltung',
+  'Schutzschirmverfahren',
+  'Masseunzulänglichkeit',
+  'Aufhebung/Einstellung',
+  'Insolvenzbekanntmachung',
+]
 
 export default function FilterBar({ initialFilters, onApply, sources }) {
   const [filters, setFilters] = useState(initialFilters)
@@ -14,7 +24,16 @@ export default function FilterBar({ initialFilters, onApply, sources }) {
   }
 
   const handleReset = () => {
-    const reset = { insolvency: '', max_employees: '', max_revenue: '', source: '', q: '' }
+    const reset = {
+      insolvency: '',
+      max_employees: '',
+      max_revenue: '',
+      source: '',
+      bundesland: '',
+      industry: '',
+      procedure_type: '',
+      q: '',
+    }
     setFilters(reset)
     onApply(reset)
   }
@@ -28,10 +47,10 @@ export default function FilterBar({ initialFilters, onApply, sources }) {
   return (
     <form className="filter-bar" onSubmit={handleSubmit}>
       <div className="filter-group">
-        <label>Suche (Titel)</label>
+        <label>Suche</label>
         <input
           type="text"
-          placeholder="z.B. Insolvenz…"
+          placeholder="Firma, Ort, Branche…"
           value={filters.q}
           onChange={e => set('q', e.target.value)}
         />
@@ -74,6 +93,36 @@ export default function FilterBar({ initialFilters, onApply, sources }) {
           <option value="">Alle</option>
           {sources.map(s => (
             <option key={s.id} value={s.name}>{s.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="filter-group">
+        <label>Bundesland</label>
+        <input
+          type="text"
+          placeholder="z.B. Bayern"
+          value={filters.bundesland}
+          onChange={e => set('bundesland', e.target.value)}
+        />
+      </div>
+
+      <div className="filter-group">
+        <label>Branche</label>
+        <input
+          type="text"
+          placeholder="z.B. Handel"
+          value={filters.industry}
+          onChange={e => set('industry', e.target.value)}
+        />
+      </div>
+
+      <div className="filter-group">
+        <label>Verfahren</label>
+        <select value={filters.procedure_type} onChange={e => set('procedure_type', e.target.value)}>
+          <option value="">Alle</option>
+          {PROCEDURE_TYPES.map(type => (
+            <option key={type} value={type}>{type}</option>
           ))}
         </select>
       </div>

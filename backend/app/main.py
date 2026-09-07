@@ -8,7 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import events, jobs, sources, stats
+from app.api import events, jobs, market, sources, stats
 from app.config import settings
 from app.database import init_db
 from app.jobs.fetch_all import run_fetch_all
@@ -78,6 +78,7 @@ app.include_router(events.router)
 app.include_router(sources.router)
 app.include_router(jobs.router)
 app.include_router(stats.router)
+app.include_router(market.router)
 
 
 @app.get("/health")

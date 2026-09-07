@@ -41,9 +41,15 @@ class Company(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     registry_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    legal_form: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     employees: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     revenue_eur: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    city: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
+    postal_code: Mapped[Optional[str]] = mapped_column(String(12), nullable=True)
+    bundesland: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    industry: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
+    industry_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
 
     events: Mapped[list["Event"]] = relationship("Event", back_populates="company")
 
@@ -62,6 +68,9 @@ class Event(Base):
     event_type: Mapped[str] = mapped_column(String(64), default="notice")  # notice | insolvency | other
     insolvency_score: Mapped[float] = mapped_column(Float, default=0.0)
     raw_excerpt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    court: Mapped[Optional[str]] = mapped_column(String(160), nullable=True, index=True)
+    case_number: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    procedure_type: Mapped[Optional[str]] = mapped_column(String(80), nullable=True, index=True)
     hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
 
     # Completeness flag: True when employees/revenue data is missing

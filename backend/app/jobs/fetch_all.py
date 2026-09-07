@@ -10,6 +10,16 @@ from sqlalchemy.exc import IntegrityError
 
 from app.classifier import compute_insolvency_score
 from app.database import AsyncSessionLocal, init_db
+from app.enrichment import (
+    extract_case_number,
+    extract_court,
+    extract_postal_city,
+    infer_bundesland,
+    infer_company_name,
+    infer_industry,
+    infer_legal_form,
+    infer_procedure_type,
+)
 from app.hashing import compute_event_hash
 from app.models import Company, Event, Source
 from app.sources import FetchResult, RawEvent
@@ -57,11 +67,56 @@ async def _get_or_create_company(session, raw: RawEvent) -> Company | None:
         company = Company(
             name=raw.company_name,
             registry_id=raw.company_registry_id,
+            legal_form=raw.company_legal_form,
             location=raw.company_location,
+            city=raw.company_city,
+            postal_code=raw.company_postal_code,
+            bundesland=raw.company_bundesland,
+            industry=raw.company_industry,
+            industry_code=raw.company_industry_code,
         )
         session.add(company)
         await session.flush()
+    else:
+        _fill_missing_company_fields(company, raw)
     return company
+
+
+def _fill_missing_company_fields(company: Company, raw: RawEvent) -> None:
+    """Backfill optional enrichment fields without overwriting known data."""
+    for field_name in (
+        "registry_id",
+        "legal_form",
+        "location",
+        "city",
+        "postal_code",
+        "bundesland",
+        "industry",
+        "industry_code",
+    ):
+        raw_value = getattr(raw, f"company_{field_name}", None)
+        if raw_value and getattr(company, field_name) is None:
+            setattr(company, field_name, raw_value)
+
+
+def _enrich_raw_event(raw: RawEvent) -> RawEvent:
+    """Populate market-research fields inferred from notice text."""
+    text = f"{raw.title} {raw.raw_excerpt or ''}"
+    court = raw.court or extract_court(text)
+    postal_code, city = extract_postal_city(text)
+    industry, industry_code = infer_industry(text)
+
+    raw.company_name = raw.company_name or infer_company_name(text)
+    raw.company_legal_form = raw.company_legal_form or infer_legal_form(text)
+    raw.company_city = raw.company_city or city
+    raw.company_postal_code = raw.company_postal_code or postal_code
+    raw.company_bundesland = raw.company_bundesland or infer_bundesland(raw.company_city, court)
+    raw.company_industry = raw.company_industry or industry
+    raw.company_industry_code = raw.company_industry_code or industry_code
+    raw.court = court
+    raw.case_number = raw.case_number or extract_case_number(text)
+    raw.procedure_type = raw.procedure_type or infer_procedure_type(text)
+    return raw
 
 
 async def _persist_result(session, source: Source, result: FetchResult) -> int:
@@ -77,6 +132,7 @@ async def _persist_result(session, source: Source, result: FetchResult) -> int:
 
     new_count = 0
     for raw in result.events:
+        raw = _enrich_raw_event(raw)
         h = compute_event_hash(raw.title, raw.url, raw.published_at)
         score = compute_insolvency_score(f"{raw.title} {raw.raw_excerpt or ''}")
 
@@ -92,6 +148,9 @@ async def _persist_result(session, source: Source, result: FetchResult) -> int:
             event_type=raw.event_type,
             insolvency_score=score,
             raw_excerpt=raw.raw_excerpt,
+            court=raw.court,
+            case_number=raw.case_number,
+            procedure_type=raw.procedure_type,
             hash=h,
             data_incomplete=(company is None or company.employees is None or company.revenue_eur is None),
         )

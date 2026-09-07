@@ -41,6 +41,15 @@ export default function EventDetail() {
                 : <Badge variant="gray">{event.event_type}</Badge>
               }
             </DetailField>
+            {event.procedure_type && (
+              <DetailField label="Verfahrensart">{event.procedure_type}</DetailField>
+            )}
+            {event.court && (
+              <DetailField label="Insolvenzgericht">{event.court}</DetailField>
+            )}
+            {event.case_number && (
+              <DetailField label="Aktenzeichen">{event.case_number}</DetailField>
+            )}
             <DetailField label="Insolvenz-Score">
               <ScoreBar score={event.insolvency_score} showValue />
             </DetailField>
@@ -83,8 +92,26 @@ export default function EventDetail() {
                 {event.company.registry_id && (
                   <DetailField label="Handelsregister-Nr.">{event.company.registry_id}</DetailField>
                 )}
+                {event.company.legal_form && (
+                  <DetailField label="Rechtsform">{event.company.legal_form}</DetailField>
+                )}
                 {event.company.location && (
                   <DetailField label="Ort">{event.company.location}</DetailField>
+                )}
+                {event.company.city && event.company.city !== event.company.location && (
+                  <DetailField label="Stadt">{event.company.city}</DetailField>
+                )}
+                {event.company.postal_code && (
+                  <DetailField label="PLZ">{event.company.postal_code}</DetailField>
+                )}
+                {event.company.bundesland && (
+                  <DetailField label="Bundesland">{event.company.bundesland}</DetailField>
+                )}
+                {event.company.industry && (
+                  <DetailField label="Branche">
+                    {event.company.industry}
+                    {event.company.industry_code ? ` (${event.company.industry_code})` : ''}
+                  </DetailField>
                 )}
                 {event.company.employees != null ? (
                   <DetailField label="Mitarbeiter">{event.company.employees}</DetailField>

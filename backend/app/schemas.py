@@ -30,9 +30,15 @@ class CompanyOut(BaseModel):
     id: int
     name: str
     registry_id: Optional[str]
+    legal_form: Optional[str]
     employees: Optional[int]
     revenue_eur: Optional[float]
     location: Optional[str]
+    city: Optional[str]
+    postal_code: Optional[str]
+    bundesland: Optional[str]
+    industry: Optional[str]
+    industry_code: Optional[str]
 
 
 # ── Event ──────────────────────────────────────────────────────────────────────
@@ -52,6 +58,9 @@ class EventOut(BaseModel):
     event_type: str
     insolvency_score: float
     raw_excerpt: Optional[str]
+    court: Optional[str]
+    case_number: Optional[str]
+    procedure_type: Optional[str]
     data_incomplete: bool
 
 
@@ -67,3 +76,24 @@ class StatsOut(BaseModel):
     insolvency_events_24h: int
     insolvency_events_7d: int
     sources: list[SourceOut]
+
+
+class BucketOut(BaseModel):
+    label: str
+    count: int
+
+
+class TrendPointOut(BaseModel):
+    period: str
+    count: int
+
+
+class MarketInsightsOut(BaseModel):
+    total_insolvency_events: int
+    data_incomplete_events: int
+    by_bundesland: list[BucketOut]
+    by_industry: list[BucketOut]
+    by_procedure_type: list[BucketOut]
+    by_court: list[BucketOut]
+    monthly_trend: list[TrendPointOut]
+    latest_events: list[EventOut]

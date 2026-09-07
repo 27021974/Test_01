@@ -16,6 +16,10 @@ export function fetchStats() {
   return apiFetch('/api/stats')
 }
 
+export function fetchMarketInsights(days = 180) {
+  return apiFetch(`/api/market-insights?days=${encodeURIComponent(days)}`)
+}
+
 export function fetchEvents(params = {}) {
   const qs = new URLSearchParams()
   Object.entries(params).forEach(([k, v]) => {

@@ -18,6 +18,15 @@ class RawEvent:
     company_name: Optional[str] = None
     company_location: Optional[str] = None
     company_registry_id: Optional[str] = None
+    company_legal_form: Optional[str] = None
+    company_city: Optional[str] = None
+    company_postal_code: Optional[str] = None
+    company_bundesland: Optional[str] = None
+    company_industry: Optional[str] = None
+    company_industry_code: Optional[str] = None
+    court: Optional[str] = None
+    case_number: Optional[str] = None
+    procedure_type: Optional[str] = None
 
 
 @dataclass

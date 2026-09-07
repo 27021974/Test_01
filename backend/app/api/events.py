@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,7 +21,10 @@ async def list_events(
     max_employees: Optional[int] = Query(None, description="Maximale Mitarbeiterzahl"),
     max_revenue: Optional[float] = Query(None, description="Maximaler Jahresumsatz in EUR"),
     source: Optional[str] = Query(None, description="Quellen-Name (teilweise Übereinstimmung)"),
-    q: Optional[str] = Query(None, description="Volltextsuche im Titel"),
+    bundesland: Optional[str] = Query(None, description="Bundesland"),
+    industry: Optional[str] = Query(None, description="Branche (teilweise Übereinstimmung)"),
+    procedure_type: Optional[str] = Query(None, description="Verfahrensart"),
+    q: Optional[str] = Query(None, description="Volltextsuche in Titel, Auszug und Unternehmensname"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -39,8 +42,14 @@ async def list_events(
 
     # Join Company once (outer) if any company-based filter is requested.
     # Outer join preserves events without an associated company (data_incomplete).
-    if max_employees is not None or max_revenue is not None:
+    needs_company_join = any(
+        value is not None
+        for value in (max_employees, max_revenue, bundesland, industry)
+    )
+    company_joined = False
+    if needs_company_join:
         stmt = stmt.join(Event.company, isouter=True)
+        company_joined = True
         if max_employees is not None:
             stmt = stmt.where(
                 (Event.company_id.is_(None))
@@ -53,12 +62,27 @@ async def list_events(
                 | (Company.revenue_eur.is_(None))
                 | (Company.revenue_eur < max_revenue)
             )
+        if bundesland:
+            stmt = stmt.where(Company.bundesland == bundesland)
+        if industry:
+            stmt = stmt.where(Company.industry.ilike(f"%{industry}%"))
 
     if source:
         stmt = stmt.join(Event.source).where(Source.name.ilike(f"%{source}%"))
 
+    if procedure_type:
+        stmt = stmt.where(Event.procedure_type == procedure_type)
+
     if q:
-        stmt = stmt.where(Event.title.ilike(f"%{q}%"))
+        if not company_joined:
+            stmt = stmt.join(Event.company, isouter=True)
+        stmt = stmt.where(
+            or_(
+                Event.title.ilike(f"%{q}%"),
+                Event.raw_excerpt.ilike(f"%{q}%"),
+                Company.name.ilike(f"%{q}%"),
+            )
+        )
 
     stmt = stmt.offset(offset).limit(limit)
     result = await db.execute(stmt)
